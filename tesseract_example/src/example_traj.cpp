@@ -95,30 +95,8 @@ public:
 
     void run_example()
     {
-        // Create a visualization object
-        //auto plotter = std::make_shared<tesseract_visualization::Visualization>();
+  bool ifopt_ = true;  // or false
 
-        // Example usage, modify according to your setup
-        bool ifopt_ = true;  // or false
-
-        // Wait for environment to be initialized
-        // while (!env_->isInitialized())
-        // {
-        //     RCLCPP_INFO(this->get_logger(), "Waiting for environment to be initialized...");
-        //     rclcpp::sleep_for(std::chrono::seconds(1));
-        // }
-
-        auto plotter_ = std::make_shared<tesseract_rosutils::ROSPlotting>("world", "tesseract");
-        // Run the example
-
-  if (plotter_ != nullptr)
-    plotter_->waitForConnection();
-
-
-
-
-
-  // Set the robot initial state
   std::vector<std::string> joint_names;
   joint_names.emplace_back("joint_a1");
   joint_names.emplace_back("joint_a2");
@@ -130,9 +108,9 @@ public:
 
   auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
   auto env_ = std::make_shared<Environment>();
-  
-  // Initialize Environment
-
+  auto plotter_ = std::make_shared<tesseract_rosutils::ROSPlotting>("base_link", "tesseract_ros_examples");
+  if (plotter_ != nullptr)
+    plotter_->waitForConnection();
 
   //std::string urdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/abb_irb2400.urdf";
   //std::string srdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/abb_irb2400.srdf";
@@ -175,7 +153,6 @@ public:
   Command::Ptr cmd = std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
     env_->applyCommand(cmd);
 
- // env_->setState(joint_names, joint_pos);
   // Create Task Composer Plugin Factory
   const std::string share_dir(TESSERACT_TASK_COMPOSER_DIR);
   tesseract_common::fs::path config_path(share_dir + "/config/task_composer_plugins.yaml");
@@ -206,7 +183,7 @@ for (const auto& pair : joint_values) {
     RCLCPP_INFO(this->get_logger(), "  %s: %f", pair.first.c_str(), pair.second);
 }
 
-    StateWaypointPoly wp0{ StateWaypoint(joint_names, position) };
+  StateWaypointPoly wp0{ StateWaypoint(joint_names, position) };
   MoveInstruction start_instruction(wp0, MoveInstructionType::FREESPACE, "freespace_profile");
   start_instruction.setDescription("Start Instruction");
 
@@ -320,6 +297,10 @@ for (const auto& pair : joint_values) {
     RCLCPP_INFO(this->get_logger(), "wyplotowalo");
 
   }
+  const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
+  auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(shared_from_this(),env_, EXAMPLE_MONITOR_NAMESPACE);
+  monitor->startPublishingEnvironment();
+
 }
     
 
@@ -334,6 +315,7 @@ int main(int argc, char** argv)
     auto node = std::make_shared<ExampleNode>();
     // Spin in a separate thread to allow the environment to be updated
     std::thread([node]() { rclcpp::spin(node); }).detach();
+
 
     // Run the example after some delay to ensure the environment is received
     std::this_thread::sleep_for(std::chrono::seconds(1));
