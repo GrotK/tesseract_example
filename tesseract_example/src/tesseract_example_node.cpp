@@ -14,15 +14,38 @@
 #include <urdf/model.h>
 #include <kdl/tree.hpp>
 #include <tesseract_state_solver/state_solver.h>
-
-#include <trajopt_sqp/qp_solver.h>
-#include <trajopt/problem_description.hpp>
-#include <trajopt_common/macros.h>
+#include <tesseract_environment/utils.h>
+#include <tesseract_environment/commands/add_link_command.h>
+#include <tesseract_environment/environment.h>
+#include <tesseract_planning_server/tesseract_planning_server.h>
+#include <tesseract_motion_planners/simple/profile/simple_planner_fixed_size_assign_plan_profile.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
+#include <tesseract_motion_planners/descartes/profile/descartes_default_plan_profile.h>
+#include <descartes_light/edge_evaluators/compound_edge_evaluator.h>
+#include <tesseract_motion_planners/core/planner.h>
+#include <tesseract_motion_planners/core/fwd.h>
+#include <tesseract_motion_planners/core/types.h>
+#include <tesseract_motion_planners/core/utils.h>
+#include <tesseract_motion_planners/planner_utils.h>
+#include <tesseract_motion_planners/robot_config.h>
+#include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
+#include <tesseract_motion_planners/trajopt/trajopt_waypoint_config.h>
+#include <tesseract_motion_planners/trajopt/trajopt_utils.h>
+#include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_profile.h>
 
 using namespace tesseract_environment;
 using namespace tesseract_scene_graph;
 using namespace tesseract_srdf;
 using namespace tesseract_rosutils;
+using namespace tesseract_planning;
+using namespace tesseract_common;
+using namespace tesseract_environment;
+using namespace tesseract_scene_graph;
+using namespace tesseract_collision;
+using namespace tesseract_rosutils;
+using namespace tesseract_visualization;
 
 bool validate_urdf_srdf(const std::string& urdf_path, const std::string& srdf_path)
 {
@@ -58,8 +81,10 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   auto node = rclcpp::Node::make_shared("tesseract_ros2_example");
   // Locate URDF and SRDF files
-  std::string urdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/abb_irb2400.urdf";
-  std::string srdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/abb_irb2400.srdf";
+  //std::string urdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/abb_irb2400.urdf";
+  //std::string srdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/abb_irb2400.srdf";
+    std::string urdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/lbr_iiwa_14_r820.urdf";
+  std::string srdf_path = "/opt/tesseract/install/tesseract_support/share/tesseract_support/urdf/lbr_iiwa_14_r820.srdf";
   // Load URDF and SRDF strings
   if (!validate_urdf_srdf(urdf_path, srdf_path))
   {
@@ -118,6 +143,16 @@ const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(node, tesseract, EXAMPLE_MONITOR_NAMESPACE);
   monitor->startPublishingEnvironment();
   // Set up a timer to publish the joint states at a regular interval
+
+
+
+
+
+
+
+
+
+
   auto timer = node->create_wall_timer(
     std::chrono::milliseconds(100), 
     [tesseract, joint_state_pub, static_broadcaster]() {
@@ -133,10 +168,10 @@ const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
       for (const auto& joint_name : joint_names) {
         if (joint_values.find(joint_name) != joint_values.end()) { // Check if the joint name exists in the map
           joint_state_msg->position.push_back(joint_values.at(joint_name));
-          RCLCPP_WARN(rclcpp::get_logger("tesseract_ros2_example"), "Joint name %s found in joint values! %f", joint_name.c_str(), joint_values.find(joint_name));
+          //RCLCPP_WARN(rclcpp::get_logger("tesseract_ros2_example"), "Joint name %s found in joint values! %f", joint_name.c_str(), joint_values.find(joint_name));
 
         } else {
-          RCLCPP_WARN(rclcpp::get_logger("tesseract_ros2_example"), "Joint name %s not found in joint values!", joint_name.c_str());
+          //RCLCPP_WARN(rclcpp::get_logger("tesseract_ros2_example"), "Joint name %s not found in joint values!", joint_name.c_str());
           joint_state_msg->position.push_back(0.0); // Set default value if not found
         }
       }
@@ -144,6 +179,14 @@ const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
       // Publish static transforms (if any)
       // Here, we should add the static transforms if necessary
     });
+
+
+  
+
+  
+
+
+
   // Spin ROS node
   rclcpp::spin(node);
   rclcpp::shutdown();
